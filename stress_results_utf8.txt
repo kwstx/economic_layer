@@ -1,0 +1,38 @@
+﻿# System Performance Dimension Benchmarks
+------------------------------------------------------------
+## 1. Agent Population Scale
+| Agent Count | Execution Time (s) | Memory Estimate (est) |
+| :--- | :--- | :--- |
+|         100 |             0.0064 |            5.00MB |
+|         500 |             0.1480 |           25.00MB |
+|        1000 |             0.6850 |           50.00MB |
+|        2500 |             3.7946 |          125.00MB |
+
+
+## 2. Collaboration Density
+| Density (Partners) | Execution Time (s) (N=1000) |
+| :--- | :--- |
+|                  5 |                   0.3462 |
+|                 20 |                   1.0844 |
+|                 50 |                   2.6818 |
+|                100 |                   9.3502 |
+
+
+## 3. Action Throughput
+| Iterations | Total Time (s) | Mean Latency (ms) |
+| :--- | :--- | :--- |
+|         50 |        18.6981 |            373.96 |
+
+
+## 4. Macro-Scaling Counterfactuals
+| Clusters | Execution Time (s) | Trace Complexity |
+| :--- | :--- | :--- |
+|        5 |             0.0313 |              100 |
+|       10 |             0.0530 |              200 |
+|       25 |             0.1236 |              500 |
+
+
+## 5. State Volatility Impact
+Measuring sensitivity of assessment to variance spikes.
+Processed 10 volatility spikes in 15.0758s
+------------------------------------------------------------

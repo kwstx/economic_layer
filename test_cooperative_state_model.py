@@ -10,6 +10,10 @@ from kernel.policy_transformation_engine import (
     PolicyTransformationEngine,
 )
 from kernel.adaptive_synergy_amplifier import AdaptiveSynergyAmplifier
+from kernel.economic_gradient_controller import (
+    EconomicAgentSignal,
+    EconomicGradientController,
+)
 
 
 def _sample_snapshots():
@@ -227,3 +231,97 @@ def test_adaptive_synergy_scaling_uses_pattern_specific_exponent():
     )
 
     assert adapted > baseline
+
+
+def test_economic_gradient_controller_applies_diminishing_returns_when_concentrated():
+    controller = EconomicGradientController(
+        concentration_ratio_threshold=1.7,
+        diminishing_return_strength=0.5,
+    )
+    signals = [
+        EconomicAgentSignal(
+            agent_id="dominant",
+            marginal_influence=1.0,
+            surplus_share=0.80,
+            delayed_impact_score=0.80,
+        ),
+        EconomicAgentSignal(
+            agent_id="peer_a",
+            marginal_influence=0.2,
+            surplus_share=0.10,
+            delayed_impact_score=0.20,
+        ),
+        EconomicAgentSignal(
+            agent_id="peer_b",
+            marginal_influence=0.2,
+            surplus_share=0.10,
+            delayed_impact_score=0.20,
+        ),
+    ]
+
+    outcome = controller.evaluate(signals)
+
+    assert outcome.diagnostics["fairness_pressure"] > 0.0
+    assert outcome.modifiers["dominant"].diminishing_return_modifier < 1.0
+    assert (
+        outcome.modifiers["dominant"].adjusted_marginal_influence
+        > outcome.modifiers["peer_a"].adjusted_marginal_influence
+    )
+
+
+def test_economic_gradient_controller_increases_temporal_compensation_for_undervalued_high_impact():
+    controller = EconomicGradientController(
+        temporal_compensation_rate=0.8,
+        max_temporal_compensation_boost=1.0,
+    )
+    signals = [
+        EconomicAgentSignal(
+            agent_id="delayed_high_impact",
+            marginal_influence=0.55,
+            surplus_share=0.20,
+            delayed_impact_score=0.70,
+        ),
+        EconomicAgentSignal(
+            agent_id="matched_impact",
+            marginal_influence=0.45,
+            surplus_share=0.40,
+            delayed_impact_score=0.40,
+        ),
+    ]
+
+    outcome = controller.evaluate(signals)
+
+    assert (
+        outcome.modifiers["delayed_high_impact"].temporal_compensation_weight
+        > outcome.modifiers["matched_impact"].temporal_compensation_weight
+    )
+    assert outcome.modifiers["delayed_high_impact"].temporal_compensation_weight > 1.0
+
+
+def test_economic_gradient_controller_is_near_neutral_when_balanced():
+    controller = EconomicGradientController()
+    signals = [
+        EconomicAgentSignal(
+            agent_id="a",
+            marginal_influence=0.4,
+            surplus_share=0.30,
+            delayed_impact_score=0.32,
+        ),
+        EconomicAgentSignal(
+            agent_id="b",
+            marginal_influence=0.45,
+            surplus_share=0.35,
+            delayed_impact_score=0.34,
+        ),
+        EconomicAgentSignal(
+            agent_id="c",
+            marginal_influence=0.5,
+            surplus_share=0.35,
+            delayed_impact_score=0.36,
+        ),
+    ]
+
+    outcome = controller.evaluate(signals)
+
+    assert outcome.diagnostics["fairness_pressure"] == 0.0
+    assert all(m.diminishing_return_modifier == 1.0 for m in outcome.modifiers.values())

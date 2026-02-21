@@ -89,14 +89,17 @@ class StructuralInfluenceReweighter:
         base_influence: float,
         calibration_delta: float,
         stability_coefficient: float,
-        current_accuracy: float = 0.5
+        current_accuracy: float = 0.5,
+        stability_dampening: float = 1.0
     ) -> InfluenceProfile:
         """
         Integrates new governance signals to produce an updated influence profile.
         """
         # Update calibration accuracy based on delta (EMA-like update)
         # In a real system, this would look up historical accuracy.
-        updated_accuracy = max(0.0, min(1.0, current_accuracy + calibration_delta))
+        # Stability dampening reduces the amplitude of the calibration update.
+        dampened_delta = calibration_delta * stability_dampening
+        updated_accuracy = max(0.0, min(1.0, current_accuracy + dampened_delta))
         
         trust_coeff = self.compute_trust_coefficient(updated_accuracy, stability_coefficient)
         reweighted = self.calculate_reweighted_influence(base_influence, trust_coeff)

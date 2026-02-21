@@ -11,3 +11,19 @@ from .structural_influence_reweighted import (
     InfluenceProfile,
     StructuralInfluenceReweighter,
 )
+from .economic_gradient_controller import (
+    AgentGradientModifier,
+    EconomicAgentSignal,
+    EconomicGradientController,
+    EconomicGradientOutcome,
+)
+from .predictive_stability_dampener import (
+    PredictiveStabilityDampener,
+    StabilityDescriptor,
+)
+from .cooperative_health_threshold_engine import (
+    ConstraintViolation,
+    CooperativeHealthAssessment,
+    CooperativeHealthThresholdEngine,
+    HealthThresholdConstraints,
+)

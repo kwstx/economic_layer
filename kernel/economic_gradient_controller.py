@@ -63,7 +63,11 @@ class EconomicGradientController:
         self._temporal_compensation_rate = temporal_compensation_rate
         self._max_temporal_compensation_boost = max_temporal_compensation_boost
 
-    def evaluate(self, agent_signals: Sequence[EconomicAgentSignal]) -> EconomicGradientOutcome:
+    def evaluate(
+        self, 
+        agent_signals: Sequence[EconomicAgentSignal],
+        stability_dampening: float = 1.0
+    ) -> EconomicGradientOutcome:
         if not agent_signals:
             return EconomicGradientOutcome(modifiers={}, diagnostics={})
 
@@ -102,7 +106,7 @@ class EconomicGradientController:
             influence_excess = max(0.0, relative_influence - 1.0)
             diminishing = 1.0 - (
                 fairness_pressure
-                * self._diminishing_return_strength
+                * (self._diminishing_return_strength * stability_dampening)
                 * (influence_excess / (1.0 + influence_excess))
             )
             diminishing = max(self._minimum_diminishing_modifier, diminishing)

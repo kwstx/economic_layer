@@ -87,6 +87,7 @@ class AdaptiveSynergyAmplifier:
         predicted_amplification: float,
         observed_amplification: float,
         pattern_signature: Mapping[str, PatternValue] | None = None,
+        stability_dampening: float = 1.0,
     ) -> ExponentAdjustment:
         key = self._to_pattern_key(pattern_signature)
         state = self._states.setdefault(key, _PatternState(exponent=self._base_exponent))
@@ -104,7 +105,7 @@ class AdaptiveSynergyAmplifier:
             state.observations >= self._min_observations
             and abs(state.residual_ema) > self._residual_tolerance
         ):
-            delta = self._learning_rate * abs(state.residual_ema)
+            delta = (self._learning_rate * abs(state.residual_ema)) * stability_dampening
             if state.residual_ema > 0:
                 state.exponent = min(self._max_exponent, state.exponent + delta)
                 direction = "increase"

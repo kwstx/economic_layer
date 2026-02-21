@@ -9,6 +9,7 @@ from kernel.policy_transformation_engine import (
     PolicyParameters,
     PolicyTransformationEngine,
 )
+from kernel.adaptive_synergy_amplifier import AdaptiveSynergyAmplifier
 
 
 def _sample_snapshots():
@@ -21,6 +22,7 @@ def _sample_snapshots():
             predictive_accuracy=[0.62, 0.66, 0.70],
             long_horizon_impact=[0.10, 0.16, 0.22],
             synergy_score=0.72,
+            stability_coefficient=0.85,
         ),
         AgentSnapshot(
             agent_id="a2",
@@ -30,6 +32,7 @@ def _sample_snapshots():
             predictive_accuracy=[0.60, 0.64, 0.67],
             long_horizon_impact=[0.09, 0.14, 0.20],
             synergy_score=0.69,
+            stability_coefficient=0.82,
         ),
         AgentSnapshot(
             agent_id="a3",
@@ -39,6 +42,7 @@ def _sample_snapshots():
             predictive_accuracy=[0.58, 0.63, 0.68],
             long_horizon_impact=[0.08, 0.15, 0.21],
             synergy_score=0.71,
+            stability_coefficient=0.88,
         ),
         AgentSnapshot(
             agent_id="a4",
@@ -48,6 +52,7 @@ def _sample_snapshots():
             predictive_accuracy=[0.57, 0.60, 0.64],
             long_horizon_impact=[0.06, 0.11, 0.18],
             synergy_score=0.68,
+            stability_coefficient=0.75,
         ),
     ]
 
@@ -142,3 +147,83 @@ def test_policy_transformation_engine_can_map_from_tensor():
         indicators.long_term_impact_accumulation_rate
         == tensor.long_horizon_impact_accumulation_rate
     )
+
+
+def test_adaptive_synergy_amplifier_increases_exponent_when_underpredicting_persistently():
+    amplifier = AdaptiveSynergyAmplifier(
+        base_exponent=1.0,
+        learning_rate=0.5,
+        ema_alpha=1.0,
+        min_observations=2,
+        residual_tolerance=0.01,
+    )
+    pattern = {"cluster_size": 4, "topology": "mesh"}
+
+    first = amplifier.adapt_exponent(
+        predicted_amplification=1.1,
+        observed_amplification=1.5,
+        pattern_signature=pattern,
+    )
+    second = amplifier.adapt_exponent(
+        predicted_amplification=1.2,
+        observed_amplification=1.6,
+        pattern_signature=pattern,
+    )
+
+    assert first.direction == "hold"
+    assert second.direction == "increase"
+    assert second.new_exponent > 1.0
+
+
+def test_adaptive_synergy_amplifier_decreases_exponent_when_overpredicting_persistently():
+    amplifier = AdaptiveSynergyAmplifier(
+        base_exponent=1.2,
+        learning_rate=0.5,
+        ema_alpha=1.0,
+        min_observations=2,
+        residual_tolerance=0.01,
+    )
+    pattern = {"cluster_size": 4, "topology": "star"}
+
+    amplifier.adapt_exponent(
+        predicted_amplification=1.6,
+        observed_amplification=1.2,
+        pattern_signature=pattern,
+    )
+    adjustment = amplifier.adapt_exponent(
+        predicted_amplification=1.5,
+        observed_amplification=1.1,
+        pattern_signature=pattern,
+    )
+
+    assert adjustment.direction == "decrease"
+    assert adjustment.new_exponent < 1.2
+
+
+def test_adaptive_synergy_scaling_uses_pattern_specific_exponent():
+    amplifier = AdaptiveSynergyAmplifier(
+        base_exponent=1.0,
+        learning_rate=1.0,
+        ema_alpha=1.0,
+        min_observations=1,
+        residual_tolerance=0.0,
+    )
+    pattern = {"cluster_size": 5, "topology": "ring"}
+
+    baseline = amplifier.scale_synergy(
+        base_synergy=0.8,
+        structural_signal=0.5,
+        pattern_signature=pattern,
+    )
+    amplifier.adapt_exponent(
+        predicted_amplification=1.0,
+        observed_amplification=1.4,
+        pattern_signature=pattern,
+    )
+    adapted = amplifier.scale_synergy(
+        base_synergy=0.8,
+        structural_signal=0.5,
+        pattern_signature=pattern,
+    )
+
+    assert adapted > baseline

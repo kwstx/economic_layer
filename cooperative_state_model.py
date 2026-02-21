@@ -23,6 +23,7 @@ class AgentSnapshot:
     predictive_accuracy: Sequence[float]
     long_horizon_impact: Sequence[float]
     synergy_score: float
+    stability_coefficient: float = 1.0
 
 
 @dataclass(frozen=True)

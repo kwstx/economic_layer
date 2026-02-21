@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Callable, Dict, List, Sequence, Tuple
 
 from cooperative_state_model import CooperativeStateTensor
@@ -39,7 +39,7 @@ class PolicyMutation:
     new_value: float
     rationale: str
     indicators: Dict[str, float]
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass(frozen=True)

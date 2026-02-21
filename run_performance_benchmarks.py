@@ -71,7 +71,7 @@ def run_performance_dimensions():
     print("\n")
 
     # 4. Causal Graph Depth (Macro Counterfactual Simulation)
-    print("## 4. Macro-Scaling Counterfactuals")
+    print("## 4. Macro-Scaling Counterfactuals (Scenario D)")
     print("| Clusters | Execution Time (s) | Trace Complexity |")
     print("| :--- | :--- | :--- |")
     simulator = MacroCounterfactualSimulator()
@@ -96,8 +96,48 @@ def run_performance_dimensions():
         print(f"| {c_count:8} | {elapsed:18.4f} | {c_count * 20:16} |")
     print("\n")
 
-    # 5. State Volatility (Response Sensitivity)
-    print("## 5. State Volatility Impact")
+    # 5. Synergy Adaptation Stability (Scenario B)
+    print("## 5. High-Frequency Synergy Adaptation (Scenario B)")
+    from kernel.adaptive_synergy_amplifier import AdaptiveSynergyAmplifier
+    amplifier = AdaptiveSynergyAmplifier(ema_alpha=0.3)
+    pattern = {"cluster_size": 10, "topology": "mesh"}
+    start = time.perf_counter()
+    for i in range(500):
+        predicted = random.uniform(1.0, 2.0)
+        observed = predicted * random.uniform(0.8, 1.5) # Add noise
+        _ = amplifier.adapt_exponent(
+            predicted_amplification=predicted, 
+            observed_amplification=observed, 
+            pattern_signature=pattern
+        )
+    end = time.perf_counter()
+    print(f"Processed 500 adaptation cycles in {end-start:.4f}s")
+    print(f"Final exponent for pattern: {amplifier.exponent_for(pattern):.4f}")
+    print("\n")
+
+    # 6. API Payload Scaling (Scenario E)
+    print("## 6. API Payload Scaling (Scenario E)")
+    from kernel.governance_control_api import GovernanceControlAPI
+    from kernel.policy_transformation_engine import PolicyTransformationEngine
+    from kernel.structural_influence_reweighted import StructuralInfluenceReweighter
+    api = GovernanceControlAPI(
+        PolicyTransformationEngine(),
+        MacroCounterfactualSimulator(),
+        StructuralInfluenceReweighter()
+    )
+    print("| Agent Count | API Query Latency (s) |")
+    print("| :--- | :--- |")
+    for n in [100, 500, 1000, 2500]:
+        snapshots = generate_snapshots(n)
+        start = time.perf_counter()
+        _ = api.query_state_tensors(snapshots)
+        end = time.perf_counter()
+        elapsed = end - start
+        print(f"| {n:11} | {elapsed:21.4f} |")
+    print("\n")
+
+    # 7. State Volatility (Scenario C)
+    print("## 7. Behavioral Drift & Trust Volatility (Scenario C)")
     print("Measuring sensitivity of assessment to variance spikes.")
     n_fixed = 1000
     snapshots = generate_snapshots(n_fixed)
@@ -107,7 +147,6 @@ def run_performance_dimensions():
         volatile_snapshots = list(snapshots)
         for i in range(100):
             idx = random.randint(0, n_fixed-1)
-            # Use dataclasses.replace or reconstruct since it's frozen
             s = volatile_snapshots[idx]
             volatile_snapshots[idx] = AgentSnapshot(
                 agent_id=s.agent_id,

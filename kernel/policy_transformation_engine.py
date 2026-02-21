@@ -2,9 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
-from typing import Callable, Dict, List, Sequence, Tuple
+from typing import TYPE_CHECKING, Callable, Dict, List, Sequence, Tuple
 
 from cooperative_state_model import CooperativeStateTensor
+
+if TYPE_CHECKING:
+    from .macro_counterfactual_simulator import (
+        HistoricalTaskCluster,
+        MacroCounterfactualSimulator,
+        MutationCommitDecision,
+    )
 
 
 @dataclass(frozen=True)
@@ -141,3 +148,67 @@ class PolicyTransformationEngine:
             )
 
         return current, events
+
+    def apply_with_counterfactual_gate(
+        self,
+        indicators: GovernanceIndicators,
+        *,
+        historical_clusters: Sequence["HistoricalTaskCluster"],
+        simulator: "MacroCounterfactualSimulator",
+        parameters: PolicyParameters | None = None,
+        major_shift_threshold: float = 0.10,
+    ) -> "MutationCommitDecision":
+        from .macro_counterfactual_simulator import MutationCommitDecision
+
+        baseline_parameters = parameters or PolicyParameters()
+        candidate_parameters, events = self.apply(indicators, baseline_parameters)
+        if not events:
+            return MutationCommitDecision(
+                committed_parameters=baseline_parameters,
+                all_events=tuple(),
+                committed_events=tuple(),
+                blocked_events=tuple(),
+                counterfactual=None,
+                reason="No policy mutation generated.",
+            )
+
+        major_events = [
+            event
+            for event in events
+            if abs(event.new_value - event.previous_value)
+            / max(abs(event.previous_value), 1e-9)
+            >= major_shift_threshold
+        ]
+        if not major_events:
+            return MutationCommitDecision(
+                committed_parameters=candidate_parameters,
+                all_events=tuple(events),
+                committed_events=tuple(events),
+                blocked_events=tuple(),
+                counterfactual=None,
+                reason="No major mutation detected. Candidate committed.",
+            )
+
+        counterfactual = simulator.evaluate_parameter_shift(
+            clusters=historical_clusters,
+            baseline_parameters=baseline_parameters,
+            candidate_parameters=candidate_parameters,
+        )
+        if counterfactual.should_commit:
+            return MutationCommitDecision(
+                committed_parameters=candidate_parameters,
+                all_events=tuple(events),
+                committed_events=tuple(events),
+                blocked_events=tuple(),
+                counterfactual=counterfactual,
+                reason="Counterfactual replay improved long-term cooperation and maintained trust stability.",
+            )
+
+        return MutationCommitDecision(
+            committed_parameters=baseline_parameters,
+            all_events=tuple(events),
+            committed_events=tuple(),
+            blocked_events=tuple(events),
+            counterfactual=counterfactual,
+            reason="Major mutation blocked by macro counterfactual trust/cooperation gate.",
+        )

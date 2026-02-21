@@ -27,3 +27,10 @@ from .cooperative_health_threshold_engine import (
     CooperativeHealthThresholdEngine,
     HealthThresholdConstraints,
 )
+from .macro_counterfactual_simulator import (
+    CounterfactualEvaluation,
+    HistoricalTaskCluster,
+    MacroCounterfactualSimulator,
+    MutationCommitDecision,
+    ReplayAggregateMetrics,
+)

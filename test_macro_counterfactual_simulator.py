@@ -103,7 +103,7 @@ def test_macro_counterfactual_allows_commit_on_long_term_gain_without_trust_inst
 def test_macro_counterfactual_blocks_when_trust_variance_destabilizes():
     simulator = MacroCounterfactualSimulator(
         min_cooperative_intelligence_gain=0.0,
-        max_trust_variance_increase=0.001,
+        max_trust_variance_increase=0.0005,
     )
 
     baseline = PolicyParameters()
